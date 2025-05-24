@@ -3,7 +3,6 @@ import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
 import { UsersModule } from '@/modules/users/users.module';
 import { LikesModule } from '@/modules/likes/likes.module';
-
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MenuItemOptionsModule } from '@/modules/menu.item.options/menu.item.options.module';
@@ -16,6 +15,8 @@ import { ReviewsModule } from '@/modules/reviews/reviews.module';
 import { AuthModule } from '@/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 
 @Module({
   imports: [
@@ -37,6 +38,33 @@ import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
       inject: [ConfigService],
     }),
     AuthModule,
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        transport: {
+          host: 'smtp.gmail.com',
+          port: 465,
+          // ignoreTLS: true,
+          // secure: true,
+          auth: {
+            user: configService.get<string>('MAIL_USER'),
+            pass: configService.get<string>('MAIL_PASSWORD'),
+          },
+        },
+        defaults: {
+          from: '"No Reply" <no-reply@localhost>',
+        },
+        // preview: true,
+        // template: {
+        //   dir: process.cwd() + '/template/',
+        //   adapter: new HandlebarsAdapter(), // or new PugAdapter() or new EjsAdapter()
+        //   options: {
+        //     strict: true,
+        //   },
+        // },
+      }),
+    }),
   ],
   controllers: [AppController],
   providers: [
